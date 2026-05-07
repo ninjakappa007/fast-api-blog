@@ -1,23 +1,39 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+import logging
+from backend.schemas import ProductCreate, ProductResponse
+from fastapi import HTTPException, status
 
+logger = logging.getLogger(__name__)
 
-class Product(BaseModel):
-    name: str
-    price : float
-    is_sale : bool | None = None
+# product storage
 
+product_list = {}
+id_counter = 0
 
 app = FastAPI()
+logger.info(f'Running app version {app.version}')
 
 @app.get('/')
 def homepage():
     return {"msg" : "Homepage"}
 
-@app.get('/product/{product_id}')
-def get_product(product_id : int):
-    return {"product_id" : product_id}
+@app.get('/api/products', response_model=[ProductResponse])
+def get_products():
+    return
 
-@app.put('/product/{product_id}')
-def update_product(product_id : int, product : Product):
-    return {"product_name" : product.name, "product_id" : product_id}
+
+@app.get('/api/product/{product_id}', response_model=ProductResponse)
+def get_product(product_id: int):
+    for product in product_list:
+        if product.id == product_id:
+            return product
+        
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="item not found")
+
+@app.post('/api/product')
+def create_product(product : ProductCreate):
+    new_id = id_counter + 1
+    id_counter += 1
+    product_list[new_id] = product
+    return {"msg" : "created"}

@@ -16,6 +16,10 @@ class UserResponse(UserBase):
     image_file : str | None
     image_path : str
     
+class UserUpdate(BaseModel):
+    username: str | None = Field(default=None, min_length=1, max_length=50)
+    email: EmailStr | None = Field(default=None, max_length=120)
+    image_file: str | None = Field(default=None, min_length=1, max_length=200)
 
 
 # this is kind of a serializer schema which is used by pydantic to validate data in runtime & it uses type hints

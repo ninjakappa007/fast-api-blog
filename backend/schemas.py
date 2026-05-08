@@ -34,3 +34,7 @@ class PostResponse(PostBase):
     user_id : int
     date_posted : datetime
     author : UserResponse # add nested user data in result json
+
+class PostUpdate(PostBase):
+    title: str | None = Field(default=None, min_length=1, max_length=100)
+    content : str | None = Field(default=None, min_length=1)

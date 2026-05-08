@@ -1,15 +1,12 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
 import logging
 from backend.schemas import *
 from fastapi import HTTPException, status, Depends
-from contextlib import asynccontextmanager
 from backend.models import UserModel, PostModel
 from typing import Annotated
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from backend.database import Base, engine, get_db
-from fastapi.staticfiles import StaticFiles
 from typing import List
 
 logger = logging.getLogger(__name__)
@@ -119,3 +116,20 @@ def create_post(post: PostCreate, db: Annotated[Session, Depends(get_db)]):
     db.commit()
     db.refresh(new_post)
     return new_post
+
+@app.patch('/api/posts/{post_id}', response_model=PostResponse)
+def update_post_full(post_id, post_data: PostCreate, db: Annotated[Session, Depends(get_db)]):
+    result = db.execute(select(PostModel).where(PostModel.id == post_id))
+    post = result.scalars().first()
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    
+    if post_data.user_id != post.user_id:
+        result = db.execute(select(UserModel).where(UserModel.id == post_data.user_id))
+        user = result.scalars().first()
+        
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    
+    

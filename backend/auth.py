@@ -3,10 +3,17 @@ import jwt
 from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
 from backend.config import settings
+from typing import Annotated
+from fastapi import Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from backend.models import UserModel, PostModel
+from backend.database import get_db
 
 
 password_hash = PasswordHash.recommended()
 
+# Extracts bearer token from authorization header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/auth_token')
 
 def hash_password(password : str) -> str:
@@ -93,3 +100,42 @@ def verify_refresh_token(token : str) -> str | None:
         return None
     else:
         return payload.get("sub")
+    
+async def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
+    user_id = verify_access_token(token)
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    result = await db.execute(select(UserModel).where(UserModel.id == int(user_id)))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+    
+"""
+This creates a reusable type alias for dependency injection.
+
+Breaking it down:
+Depends(get_current_user) — tells FastAPI to run get_current_user (which likely extracts and validates the JWT token,
+    then returns the user) before the route handler executes.
+Annotated[UserModel, Depends(...)] — combines the type hint (UserModel) with the dependency metadata into one annotation.
+CurrentUser = ... — saves it as a reusable alias so you don't repeat yourself.
+
+Instead of writing this in every protected route:
+async def get_posts(user: Annotated[UserModel, Depends(get_current_user)]):
+
+You just write:
+async def get_posts(user: CurrentUser):
+"""
+CurrentUser = Annotated[UserModel, Depends(get_current_user)]

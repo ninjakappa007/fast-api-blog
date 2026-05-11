@@ -12,6 +12,7 @@ from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from backend.auth import *
 from backend.config import settings
+from backend.auth import CurrentUser
 
 router = APIRouter()
 

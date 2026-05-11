@@ -39,7 +39,8 @@ class PostBase(BaseModel):
     
     
 class PostCreate(PostBase):
-    user_id : int
+    # user_id : int
+    pass # taking user details from auth headers
 
 class PostResponse(PostBase):
     model_config = ConfigDict(from_attributes=True)

@@ -7,20 +7,30 @@ class UserBase(BaseModel):
     email : EmailStr = Field(max_length=120)
     
 class UserCreate(UserBase):
-    ...
+    password : str = Field(min_length=8)
     
-class UserResponse(UserBase):
+class UserPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
     id : int
+    username : str
     image_file : str | None
     image_path : str
     
+class UserPrivate(UserPublic):
+    email : EmailStr
+    
+
 class UserUpdate(BaseModel):
     username: str | None = Field(default=None, min_length=1, max_length=50)
     email: EmailStr | None = Field(default=None, max_length=120)
     image_file: str | None = Field(default=None, min_length=1, max_length=200)
 
+# Used for jwt auth
+class Token(BaseModel):
+    access_token : str
+    refresh_token : str
+    token_type : str
 
 # this is kind of a serializer schema which is used by pydantic to validate data in runtime & it uses type hints
 class PostBase(BaseModel):
@@ -37,7 +47,7 @@ class PostResponse(PostBase):
     id : int
     user_id : int
     date_posted : datetime
-    author : UserResponse # add nested user data in result json
+    author : UserPublic # add nested user data in result json
 
 class PostUpdate(PostBase):
     title: str | None = Field(default=None, min_length=1, max_length=100)

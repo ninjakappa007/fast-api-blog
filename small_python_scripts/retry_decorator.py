@@ -1,19 +1,24 @@
-import time
+import logging
 
-def retry(count = 3, delay = 0):
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+def retry(count = 3):
     def main(func):
         def wrapper(*args, **kwargs):
-            for i in range(count):
-                time.sleep(delay)
+            for _ in range(count):
                 try:
-                    return func(*args, **kwargs)
+                    logger.info('Starting execution')
+                    result = func(*args, **kwargs)
+                    logger.info('Execution completed')
+                    return result
                 except Exception as e:
-                    print(e)
+                    logger.error(f'Error : {e}')
         return wrapper
     return main
-    
-@retry(count=3, delay=1)
-def hello():
+
+@retry(5)
+def do_work():
     print(10/0)
-    
-hello()
+
+do_work()
